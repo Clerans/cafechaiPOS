@@ -1,0 +1,91 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model User {
+  id              Int            @id @default(autoincrement())
+  email           String         @unique
+  passwordHash    String
+  firstName       String
+  lastName        String
+  profileImage    String?
+  status          String         @default("ACTIVE") // ACTIVE, INACTIVE
+  roleId          Int
+  role            Role           @relation(fields: [roleId], references: [id])
+  branchId        Int?
+  branch          Branch?        @relation(fields: [branchId], references: [id], name: "BranchStaff")
+  managedBranches Branch[]       @relation("BranchManager")
+  refreshTokens   RefreshToken[]
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+}
+
+model Role {
+  id          Int              @id @default(autoincrement())
+  name        String           @unique // Super Admin, Admin, Manager, Cashier, Warehouse, HR, Accountant
+  description String?
+  permissions RolePermission[]
+  users       User[]
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+}
+
+model Permission {
+  id          Int              @id @default(autoincrement())
+  name        String           // View Products, etc.
+  code        String           @unique // view:products, edit:products, etc.
+  description String?
+  roles       RolePermission[]
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+}
+
+model RolePermission {
+  roleId       Int
+  permissionId Int
+  role         Role       @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  permission   Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+
+  @@id([roleId, permissionId])
+}
+
+model Branch {
+  id        Int      @id @default(autoincrement())
+  name      String
+  code      String   @unique
+  address   String
+  phone     String
+  managerId Int?
+  manager   User?    @relation("BranchManager", fields: [managerId], references: [id], onDelete: SetNull)
+  users     User[]   @relation("BranchStaff")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model CompanySettings {
+  id            Int      @id @default(autoincrement())
+  companyName   String
+  logo          String?
+  currency      String   @default("USD")
+  timezone      String   @default("UTC")
+  language      String   @default("en")
+  taxRate       Float    @default(0.0)
+  receiptFooter String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}
+
+model RefreshToken {
+  id        Int      @id @default(autoincrement())
+  token     String   @unique
+  userId    Int
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expiresAt DateTime
+  revoked   Boolean  @default(false)
+  createdAt DateTime @default(now())
+}
