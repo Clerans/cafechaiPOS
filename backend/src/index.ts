@@ -7,6 +7,8 @@ import branchRoutes from './routes/branch.routes';
 import settingsRoutes from './routes/settings.routes';
 import roleRoutes from './routes/role.routes';
 import dashboardRoutes from './routes/dashboard.routes';
+import inventoryRoutes from './routes/inventory.routes';
+import posRoutes from './routes/pos.routes';
 
 dotenv.config();
 
@@ -34,6 +36,8 @@ app.use('/api/branches', branchRoutes);
 app.use('/api/settings', settingsRoutes);
 app.use('/api/roles', roleRoutes);
 app.use('/api/dashboard', dashboardRoutes);
+app.use('/api/inventory', inventoryRoutes);
+app.use('/api/pos', posRoutes);
 
 // Global Error Handler
 app.use((err: any, req: Request, res: Response, next: NextFunction) => {

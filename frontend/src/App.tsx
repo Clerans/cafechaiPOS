@@ -13,6 +13,7 @@ import { Branches } from "@/pages/Branches/Branches";
 import { CompanySettingsPage } from "@/pages/Settings/CompanySettingsPage";
 import { RolesPermissionsPage } from "@/pages/Roles/RolesPermissionsPage";
 import { InventoryHub } from "@/pages/Inventory/InventoryHub";
+import { POSScreen } from "@/pages/POS/POSScreen";
 import { ShieldAlert } from "lucide-react";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/Card";
 
@@ -127,6 +128,19 @@ export function App() {
             <DashboardLayout>
               <PermissionRoute permission="view:products">
                 <InventoryHub />
+              </PermissionRoute>
+            </DashboardLayout>
+          </PrivateRoute>
+        }
+      />
+
+      <Route
+        path="/pos"
+        element={
+          <PrivateRoute>
+            <DashboardLayout>
+              <PermissionRoute permission="manage:sales">
+                <POSScreen />
               </PermissionRoute>
             </DashboardLayout>
           </PrivateRoute>

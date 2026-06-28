@@ -357,6 +357,137 @@ async function main() {
     });
   }
 
+  // 13. Seed Brands and Units
+  console.log('Seeding Brands and Units...');
+  await prisma.brand.deleteMany({});
+  await prisma.unit.deleteMany({});
+
+  const brands = [];
+  for (const name of ['Generic', 'Monin', 'Nescafé', 'Anchor']) {
+    brands.push(await prisma.brand.create({ data: { name } }));
+  }
+
+  const units = [];
+  const unitsData = [
+    { name: 'Kilogram', shortName: 'kg' },
+    { name: 'Gram', shortName: 'g' },
+    { name: 'Liter', shortName: 'L' },
+    { name: 'Piece', shortName: 'pcs' },
+  ];
+  for (const u of unitsData) {
+    units.push(await prisma.unit.create({ data: u }));
+  }
+
+  // Update existing products with brand and unit links
+  const vanillaLatte = await prisma.product.findFirst({ where: { name: 'Vanilla Latte' } });
+  if (vanillaLatte) {
+    const genericBrand = brands.find(b => b.name === 'Generic');
+    const pcsUnit = units.find(u => u.shortName === 'pcs');
+    await prisma.product.update({
+      where: { id: vanillaLatte.id },
+      data: {
+        brandId: genericBrand?.id,
+        unitId: pcsUnit?.id,
+      }
+    });
+
+    // 14. Seed Product Variants for Vanilla Latte
+    console.log('Seeding product variants...');
+    await prisma.productVariant.deleteMany({});
+    
+    const variantLarge = await prisma.productVariant.create({
+      data: {
+        productId: vanillaLatte.id,
+        name: 'Size: Large',
+        sku: 'ESP-LAT-01-LG',
+        barcode: '123456789012',
+        price: 5.95,
+        cost: 1.55,
+        stock: 50,
+        threshold: 10,
+      }
+    });
+
+    const variantMedium = await prisma.productVariant.create({
+      data: {
+        productId: vanillaLatte.id,
+        name: 'Size: Medium',
+        sku: 'ESP-LAT-01-MD',
+        barcode: '123456789029',
+        price: 4.95,
+        cost: 1.25,
+        stock: 70,
+        threshold: 15,
+      }
+    });
+
+    // 15. Seed Raw Materials
+    console.log('Seeding raw materials...');
+    await prisma.rawMaterial.deleteMany({});
+
+    const espressoBeans = await prisma.rawMaterial.create({
+      data: {
+        name: 'Espresso Beans',
+        sku: 'RAW-ESP-01',
+        unit: 'kg',
+        stock: 15.5,
+        cost: 18.0,
+      }
+    });
+
+    const milk = await prisma.rawMaterial.create({
+      data: {
+        name: 'Milk',
+        sku: 'RAW-MLK-02',
+        unit: 'L',
+        stock: 48.0,
+        cost: 1.5,
+      }
+    });
+
+    const vanillaSyrup = await prisma.rawMaterial.create({
+      data: {
+        name: 'Vanilla Syrup',
+        sku: 'RAW-VAN-03',
+        unit: 'L',
+        stock: 12.0,
+        cost: 9.5,
+      }
+    });
+
+    // 16. Seed Recipe for Vanilla Latte Large Variant
+    console.log('Seeding recipes...');
+    await prisma.recipe.deleteMany({});
+    
+    await prisma.recipe.create({
+      data: {
+        productId: vanillaLatte.id,
+        variantId: variantLarge.id,
+        name: 'Vanilla Latte Large Blend',
+        description: 'Standard large vanilla latte mix parameters',
+        ingredients: {
+          create: [
+            { rawMaterialId: espressoBeans.id, quantityUsed: 0.02 },
+            { rawMaterialId: milk.id, quantityUsed: 0.30 },
+            { rawMaterialId: vanillaSyrup.id, quantityUsed: 0.04 },
+          ]
+        }
+      }
+    });
+
+    // 17. Seed Gift Cards
+    console.log('Seeding gift cards...');
+    await prisma.giftCard.deleteMany({});
+    await prisma.giftCard.create({
+      data: {
+        code: 'GIFT-WELCOME50',
+        balance: 50.00,
+        isActive: true,
+        expiryDate: new Date('2030-12-31')
+      }
+    });
+  }
+
   console.log('Seeding completed successfully!');
 }
 
