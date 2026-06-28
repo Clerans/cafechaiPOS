@@ -8,21 +8,24 @@ generator client {
 }
 
 model User {
-  id              Int            @id @default(autoincrement())
-  email           String         @unique
+  id              Int                 @id @default(autoincrement())
+  email           String              @unique
   passwordHash    String
   firstName       String
   lastName        String
   profileImage    String?
-  status          String         @default("ACTIVE") // ACTIVE, INACTIVE
+  status          String              @default("ACTIVE") // ACTIVE, INACTIVE
   roleId          Int
-  role            Role           @relation(fields: [roleId], references: [id])
+  role            Role                @relation(fields: [roleId], references: [id])
   branchId        Int?
-  branch          Branch?        @relation(fields: [branchId], references: [id], name: "BranchStaff")
-  managedBranches Branch[]       @relation("BranchManager")
+  branch          Branch?             @relation(fields: [branchId], references: [id], name: "BranchStaff")
+  managedBranches Branch[]            @relation("BranchManager")
   refreshTokens   RefreshToken[]
-  createdAt       DateTime       @default(now())
-  updatedAt       DateTime       @updatedAt
+  transactions    Transaction[]
+  cashDrawers     CashDrawerSession[]
+  activityLogs    ActivityLog[]
+  createdAt       DateTime            @default(now())
+  updatedAt       DateTime            @updatedAt
 }
 
 model Role {
@@ -55,16 +58,20 @@ model RolePermission {
 }
 
 model Branch {
-  id        Int      @id @default(autoincrement())
-  name      String
-  code      String   @unique
-  address   String
-  phone     String
-  managerId Int?
-  manager   User?    @relation("BranchManager", fields: [managerId], references: [id], onDelete: SetNull)
-  users     User[]   @relation("BranchStaff")
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id           Int                 @id @default(autoincrement())
+  name         String
+  code         String              @unique
+  address      String
+  phone        String
+  managerId    Int?
+  manager      User?               @relation("BranchManager", fields: [managerId], references: [id], onDelete: SetNull)
+  users        User[]              @relation("BranchStaff")
+  transactions Transaction[]
+  expenses     Expense[]
+  cashDrawers  CashDrawerSession[]
+  products     Product[]
+  createdAt    DateTime            @default(now())
+  updatedAt    DateTime            @updatedAt
 }
 
 model CompanySettings {
@@ -87,5 +94,102 @@ model RefreshToken {
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   expiresAt DateTime
   revoked   Boolean  @default(false)
+  createdAt DateTime @default(now())
+}
+
+model Category {
+  id       Int       @id @default(autoincrement())
+  name     String    @unique
+  products Product[]
+}
+
+model Product {
+  id           Int               @id @default(autoincrement())
+  name         String
+  sku          String            @unique
+  price        Float
+  cost         Float
+  stock        Int
+  threshold    Int               @default(10) // low stock warning
+  expiryDate   DateTime?
+  categoryId   Int
+  category     Category          @relation(fields: [categoryId], references: [id])
+  branchId     Int?
+  branch       Branch?           @relation(fields: [branchId], references: [id], onDelete: SetNull)
+  items        TransactionItem[]
+  createdAt    DateTime          @default(now())
+  updatedAt    DateTime          @updatedAt
+}
+
+model Customer {
+  id           Int           @id @default(autoincrement())
+  name         String
+  phone        String?       @unique
+  email        String?
+  transactions Transaction[]
+  createdAt    DateTime      @default(now())
+}
+
+model Transaction {
+  id            Int               @id @default(autoincrement())
+  invoiceNumber String            @unique
+  total         Float
+  cost          Float
+  profit        Float
+  tax           Float
+  discount      Float             @default(0.0)
+  paymentMethod String            // CASH, CARD, MOBILE_WALLET
+  orderType     String            // DINE_IN, TAKE_AWAY, DELIVERY
+  cashierId     Int
+  cashier       User              @relation(fields: [cashierId], references: [id])
+  branchId      Int
+  branch        Branch            @relation(fields: [branchId], references: [id])
+  customerId    Int?
+  customer      Customer?         @relation(fields: [customerId], references: [id], onDelete: SetNull)
+  items         TransactionItem[]
+  createdAt     DateTime          @default(now())
+}
+
+model TransactionItem {
+  id            Int         @id @default(autoincrement())
+  transactionId Int
+  transaction   Transaction @relation(fields: [transactionId], references: [id], onDelete: Cascade)
+  productId     Int
+  product       Product     @relation(fields: [productId], references: [id])
+  quantity      Int
+  price         Float
+  cost          Float
+}
+
+model Expense {
+  id          Int      @id @default(autoincrement())
+  amount      Float
+  description String
+  category    String   // Utilities, Salaries, Rent, Inventory, Marketing, Other
+  date        DateTime @default(now())
+  branchId    Int
+  branch      Branch   @relation(fields: [branchId], references: [id], onDelete: Cascade)
+  createdAt   DateTime @default(now())
+}
+
+model CashDrawerSession {
+  id             Int       @id @default(autoincrement())
+  branchId       Int
+  branch         Branch    @relation(fields: [branchId], references: [id], onDelete: Cascade)
+  cashierId      Int
+  cashier        User      @relation(fields: [cashierId], references: [id])
+  openingBalance Float
+  closingBalance Float?
+  status         String    @default("OPEN") // OPEN, CLOSED
+  createdAt      DateTime  @default(now())
+  closedAt       DateTime?
+}
+
+model ActivityLog {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  action    String
+  details   String?
   createdAt DateTime @default(now())
 }
