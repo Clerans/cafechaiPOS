@@ -129,6 +129,7 @@ model Product {
   adjustmentItems InventoryAdjustmentItem[]
   cycleCountItems CycleCountItem[]
   items           TransactionItem[]
+  heldOrderItems  HeldOrderItem[]
   createdAt       DateTime                   @default(now())
   updatedAt       DateTime                   @updatedAt
 }
@@ -143,31 +144,38 @@ model Customer {
 }
 
 model Transaction {
-  id            Int               @id @default(autoincrement())
-  invoiceNumber String            @unique
+  id            Int                  @id @default(autoincrement())
+  invoiceNumber String               @unique
   total         Float
   cost          Float
   profit        Float
   tax           Float
-  discount      Float             @default(0.0)
-  paymentMethod String            // CASH, CARD, MOBILE_WALLET
-  orderType     String            // DINE_IN, TAKE_AWAY, DELIVERY
+  discount      Float                @default(0.0)
+  serviceCharge Float                @default(0.0)
+  couponCode    String?
+  status        String               @default("COMPLETED") // COMPLETED, VOIDED, RETURNED
+  paymentMethod String               // CASH, CARD, SPLIT, etc.
+  orderType     String               // DINE_IN, TAKE_AWAY, DELIVERY
   cashierId     Int
-  cashier       User              @relation(fields: [cashierId], references: [id])
+  cashier       User                 @relation(fields: [cashierId], references: [id])
   branchId      Int
-  branch        Branch            @relation(fields: [branchId], references: [id])
+  branch        Branch               @relation(fields: [branchId], references: [id])
   customerId    Int?
-  customer      Customer?         @relation(fields: [customerId], references: [id], onDelete: SetNull)
+  customer      Customer?            @relation(fields: [customerId], references: [id], onDelete: SetNull)
   items         TransactionItem[]
-  createdAt     DateTime          @default(now())
+  payments      TransactionPayment[]
+  returns       ReturnLog[]
+  createdAt     DateTime             @default(now())
 }
 
 model TransactionItem {
-  id            Int         @id @default(autoincrement())
+  id            Int             @id @default(autoincrement())
   transactionId Int
-  transaction   Transaction @relation(fields: [transactionId], references: [id], onDelete: Cascade)
+  transaction   Transaction     @relation(fields: [transactionId], references: [id], onDelete: Cascade)
   productId     Int
-  product       Product     @relation(fields: [productId], references: [id])
+  product       Product         @relation(fields: [productId], references: [id])
+  variantId     Int?
+  variant       ProductVariant? @relation(fields: [variantId], references: [id], onDelete: SetNull)
   quantity      Int
   price         Float
   cost          Float
@@ -220,24 +228,26 @@ model Unit {
 }
 
 model ProductVariant {
-  id              Int                        @id @default(autoincrement())
-  productId       Int
-  product         Product                    @relation(fields: [productId], references: [id], onDelete: Cascade)
-  sku             String                     @unique
-  name            String                     // e.g. "Size: Large" or "Color: Brown"
-  barcode         String?                    @unique
-  price           Float
-  cost            Float
-  stock           Int
-  threshold       Int                        @default(10)
-  batches         Batch[]
-  serialNumbers   SerialNumber[]
-  movements       StockMovement[]
-  recipes         Recipe[]
-  adjustmentItems InventoryAdjustmentItem[]
-  cycleCountItems CycleCountItem[]
-  createdAt       DateTime                   @default(now())
-  updatedAt       DateTime                   @updatedAt
+  id               Int                        @id @default(autoincrement())
+  productId        Int
+  product          Product                    @relation(fields: [productId], references: [id], onDelete: Cascade)
+  sku              String                     @unique
+  name             String                     // e.g. "Size: Large" or "Color: Brown"
+  barcode          String?                    @unique
+  price            Float
+  cost             Float
+  stock            Int
+  threshold        Int                        @default(10)
+  batches          Batch[]
+  serialNumbers    SerialNumber[]
+  movements        StockMovement[]
+  recipes          Recipe[]
+  adjustmentItems  InventoryAdjustmentItem[]
+  cycleCountItems  CycleCountItem[]
+  transactionItems TransactionItem[]
+  heldOrderItems   HeldOrderItem[]
+  createdAt        DateTime                   @default(now())
+  updatedAt        DateTime                   @updatedAt
 }
 
 model ProductImage {
@@ -360,4 +370,59 @@ model CycleCountItem {
   variant      ProductVariant? @relation(fields: [variantId], references: [id], onDelete: Cascade)
   systemStock  Int
   countedStock Int
+}
+
+model TransactionPayment {
+  id            Int         @id @default(autoincrement())
+  transactionId Int
+  transaction   Transaction @relation(fields: [transactionId], references: [id], onDelete: Cascade)
+  method        String      // CASH, CARD, BANK_TRANSFER, QR_PAYMENT, GIFT_CARD, STORE_CREDIT
+  amount        Float
+}
+
+model HeldOrder {
+  id            Int             @id @default(autoincrement())
+  invoiceNumber String          @unique
+  total         Float
+  tax           Float
+  discount      Float
+  serviceCharge Float
+  notes         String?
+  customerId    Int?
+  branchId      Int
+  cashierId     Int
+  items         HeldOrderItem[]
+  createdAt     DateTime        @default(now())
+}
+
+model HeldOrderItem {
+  id          Int             @id @default(autoincrement())
+  heldOrderId Int
+  heldOrder   HeldOrder       @relation(fields: [heldOrderId], references: [id], onDelete: Cascade)
+  productId   Int
+  product     Product         @relation(fields: [productId], references: [id], onDelete: Cascade)
+  variantId   Int?
+  variant     ProductVariant? @relation(fields: [variantId], references: [id], onDelete: SetNull)
+  quantity    Int
+  price       Float
+  cost        Float
+}
+
+model GiftCard {
+  id         Int       @id @default(autoincrement())
+  code       String    @unique
+  balance    Float
+  isActive   Boolean   @default(true)
+  expiryDate DateTime?
+  createdAt  DateTime  @default(now())
+}
+
+model ReturnLog {
+  id            Int         @id @default(autoincrement())
+  transactionId Int
+  transaction   Transaction @relation(fields: [transactionId], references: [id], onDelete: Cascade)
+  refundAmount  Float
+  reason        String
+  returnedItems Json        // Array of items returned
+  createdAt     DateTime    @default(now())
 }

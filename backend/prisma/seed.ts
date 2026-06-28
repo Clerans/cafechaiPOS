@@ -474,6 +474,18 @@ async function main() {
         }
       }
     });
+
+    // 17. Seed Gift Cards
+    console.log('Seeding gift cards...');
+    await prisma.giftCard.deleteMany({});
+    await prisma.giftCard.create({
+      data: {
+        code: 'GIFT-WELCOME50',
+        balance: 50.00,
+        isActive: true,
+        expiryDate: new Date('2030-12-31')
+      }
+    });
   }
 
   console.log('Seeding completed successfully!');
