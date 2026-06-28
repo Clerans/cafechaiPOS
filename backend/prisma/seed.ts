@@ -151,6 +151,212 @@ async function main() {
   });
 
   console.log('Super Admin user seeded. Email: admin@enterprise.com, Password: Password123');
+
+  // 7. Seed Categories and Products
+  console.log('Seeding categories and products...');
+  const categoriesData = ['Beverages', 'Espresso', 'Bakery', 'Sandwiches'];
+  const categories: Record<string, any> = {};
+  for (const name of categoriesData) {
+    categories[name] = await prisma.category.upsert({
+      where: { name },
+      update: {},
+      create: { name },
+    });
+  }
+
+  const productsData = [
+    { name: 'Vanilla Latte', price: 4.95, cost: 1.25, stock: 120, threshold: 15, category: 'Espresso', sku: 'ESP-LAT-01' },
+    { name: 'Chocolate Croissant', price: 3.50, cost: 0.90, stock: 8, threshold: 10, category: 'Bakery', sku: 'BAK-CRO-02', expiryDate: new Date(Date.now() + 2 * 24 * 60 * 60 * 1000) }, // Expires in 2 days
+    { name: 'Double Espresso Shot', price: 2.75, cost: 0.40, stock: 450, threshold: 50, category: 'Espresso', sku: 'ESP-SHO-03' },
+    { name: 'Iced Matcha Tea', price: 4.25, cost: 1.10, stock: 5, threshold: 15, category: 'Beverages', sku: 'BEV-MAT-04' }, // Low stock
+    { name: 'Smoked Turkey Club', price: 8.95, cost: 2.75, stock: 40, threshold: 12, category: 'Sandwiches', sku: 'SND-CLB-05' },
+    { name: 'Blueberry Muffin', price: 3.25, cost: 0.75, stock: 3, threshold: 8, category: 'Bakery', sku: 'BAK-MUF-06', expiryDate: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000) }, // Expired 1 day ago
+  ];
+
+  const products: Record<string, any> = {};
+  for (const p of productsData) {
+    products[p.sku] = await prisma.product.upsert({
+      where: { sku: p.sku },
+      update: {
+        price: p.price,
+        cost: p.cost,
+        stock: p.stock,
+        threshold: p.threshold,
+        expiryDate: p.expiryDate || null,
+      },
+      create: {
+        name: p.name,
+        sku: p.sku,
+        price: p.price,
+        cost: p.cost,
+        stock: p.stock,
+        threshold: p.threshold,
+        expiryDate: p.expiryDate || null,
+        categoryId: categories[p.category].id,
+        branchId: mainBranch.id,
+      },
+    });
+  }
+
+  // 8. Seed Customers
+  console.log('Seeding customers...');
+  const customersData = [
+    { name: 'Alice Smith', phone: '+1 (555) 021-3928', email: 'alice@example.com' },
+    { name: 'Bob Johnson', phone: '+1 (555) 021-7733', email: 'bob@example.com' },
+    { name: 'Charlie Brown', phone: '+1 (555) 021-9988', email: 'charlie@example.com' },
+  ];
+  const seededCustomers = [];
+  for (const c of customersData) {
+    const cust = await prisma.customer.upsert({
+      where: { phone: c.phone },
+      update: {},
+      create: c,
+    });
+    seededCustomers.push(cust);
+  }
+
+  // 9. Seed Expenses
+  console.log('Seeding expenses...');
+  const expensesData = [
+    { amount: 1500.00, description: 'HQ Store Monthly Rent', category: 'Rent', offsetDays: 15 },
+    { amount: 310.25, description: 'HQ Electricity & Power Bills', category: 'Utilities', offsetDays: 1 },
+    { amount: 80.00, description: 'Broadband Fiber Internet', category: 'Utilities', offsetDays: 5 },
+    { amount: 450.00, description: 'Espresso Maker Maintenance', category: 'Other', offsetDays: 8 },
+    { amount: 1200.00, description: 'Salary for Cashier Staff', category: 'Salaries', offsetDays: 12 },
+  ];
+
+  // Clear expenses first to prevent duplicate seeds
+  await prisma.expense.deleteMany({});
+
+  for (const exp of expensesData) {
+    const expDate = new Date();
+    expDate.setDate(expDate.getDate() - exp.offsetDays);
+    await prisma.expense.create({
+      data: {
+        amount: exp.amount,
+        description: exp.description,
+        category: exp.category,
+        date: expDate,
+        branchId: mainBranch.id,
+      },
+    });
+  }
+
+  // 10. Seed Transactions (Orders) over the last 30 days
+  console.log('Seeding transactions...');
+  // Clear any existing transaction seeds to prevent unique check violations on invoices
+  await prisma.transactionItem.deleteMany({});
+  await prisma.transaction.deleteMany({});
+
+  const paymentMethods = ['CASH', 'CARD', 'MOBILE_WALLET'];
+  const orderTypes = ['DINE_IN', 'TAKE_AWAY', 'DELIVERY'];
+
+  // Seed data loop for last 30 days
+  for (let i = 29; i >= 0; i--) {
+    const targetDate = new Date();
+    targetDate.setDate(targetDate.getDate() - i);
+    
+    // Seed 3-6 transactions per day
+    const numTx = Math.floor(Math.random() * 4) + 3; // 3 to 6
+    for (let t = 0; t < numTx; t++) {
+      const txTime = new Date(targetDate);
+      txTime.setHours(9 + Math.floor(Math.random() * 9), Math.floor(Math.random() * 60));
+
+      const invoiceNumber = `INV-${txTime.getFullYear()}${(txTime.getMonth() + 1).toString().padStart(2, '0')}${txTime.getDate().toString().padStart(2, '0')}-${i.toString().padStart(2, '0')}${t}`;
+      
+      const pMethod = paymentMethods[Math.floor(Math.random() * paymentMethods.length)];
+      const oType = orderTypes[Math.floor(Math.random() * orderTypes.length)];
+      const customer = seededCustomers[Math.floor(Math.random() * seededCustomers.length)];
+
+      // Pick 1-3 random items
+      const numItems = Math.floor(Math.random() * 3) + 1;
+      const orderItems = [];
+      let total = 0;
+      let cost = 0;
+
+      const skus = Object.keys(products);
+      const chosenSkus = new Set<string>();
+      while (chosenSkus.size < numItems) {
+        chosenSkus.add(skus[Math.floor(Math.random() * skus.length)]);
+      }
+
+      for (const sku of chosenSkus) {
+        const productObj = products[sku];
+        const quantity = Math.floor(Math.random() * 2) + 1; // 1 or 2
+        total += productObj.price * quantity;
+        cost += productObj.cost * quantity;
+        orderItems.push({
+          productId: productObj.id,
+          quantity,
+          price: productObj.price,
+          cost: productObj.cost,
+        });
+      }
+
+      const taxRate = 8.25;
+      const tax = parseFloat(((total * taxRate) / 100).toFixed(2));
+      const discount = Math.random() > 0.8 ? 5.00 : 0.00; // occasional discount
+      const finalTotal = parseFloat((total + tax - discount).toFixed(2));
+      const profit = parseFloat((finalTotal - cost - tax).toFixed(2));
+
+      await prisma.transaction.create({
+        data: {
+          invoiceNumber,
+          total: finalTotal,
+          cost,
+          profit,
+          tax,
+          discount,
+          paymentMethod: pMethod,
+          orderType: oType,
+          cashierId: adminUser.id,
+          branchId: mainBranch.id,
+          customerId: customer.id,
+          createdAt: txTime,
+          items: {
+            create: orderItems,
+          },
+        },
+      });
+    }
+  }
+
+  // 11. Seed Cash Drawer Sessions
+  console.log('Seeding cash drawer...');
+  await prisma.cashDrawerSession.deleteMany({});
+  await prisma.cashDrawerSession.create({
+    data: {
+      branchId: mainBranch.id,
+      cashierId: adminUser.id,
+      openingBalance: 150.00,
+      closingBalance: null,
+      status: 'OPEN',
+      createdAt: new Date(),
+    },
+  });
+
+  // 12. Seed Activity Logs
+  console.log('Seeding activity logs...');
+  await prisma.activityLog.deleteMany({});
+  const activities = [
+    { action: 'USER_LOGIN', details: 'Admin logged in from dashboard IP 192.168.1.10' },
+    { action: 'UPDATE_SETTINGS', details: 'Company settings updated (Tax set to 8.25%)' },
+    { action: 'CREATE_PRODUCT', details: 'Product Vanilla Latte ESP-LAT-01 was created' },
+    { action: 'ADD_BRANCH', details: 'Operating branch main headquarters HQ001 configured' },
+    { action: 'DRAWER_OPEN', details: 'Cash drawer session started for John Doe at main storefront' },
+  ];
+
+  for (const act of activities) {
+    await prisma.activityLog.create({
+      data: {
+        userId: adminUser.id,
+        action: act.action,
+        details: act.details,
+        createdAt: new Date(Date.now() - Math.floor(Math.random() * 24 * 60 * 60 * 1000)), // within last 24h
+      },
+    });
+  }
+
   console.log('Seeding completed successfully!');
 }
 

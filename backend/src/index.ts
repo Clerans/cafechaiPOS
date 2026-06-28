@@ -6,6 +6,7 @@ import userRoutes from './routes/user.routes';
 import branchRoutes from './routes/branch.routes';
 import settingsRoutes from './routes/settings.routes';
 import roleRoutes from './routes/role.routes';
+import dashboardRoutes from './routes/dashboard.routes';
 
 dotenv.config();
 
@@ -32,6 +33,7 @@ app.use('/api/users', userRoutes);
 app.use('/api/branches', branchRoutes);
 app.use('/api/settings', settingsRoutes);
 app.use('/api/roles', roleRoutes);
+app.use('/api/dashboard', dashboardRoutes);
 
 // Global Error Handler
 app.use((err: any, req: Request, res: Response, next: NextFunction) => {
