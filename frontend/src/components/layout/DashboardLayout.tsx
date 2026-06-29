@@ -18,6 +18,7 @@ import {
   Package,
   Truck,
   Warehouse,
+  ClipboardList,
 } from "lucide-react";
 import { useAuthStore } from "@/store/authStore";
 import { useThemeStore } from "@/store/themeStore";
@@ -37,6 +38,7 @@ const SIDEBAR_ITEMS: SidebarItem[] = [
   { name: "Inventory", path: "/inventory", icon: Package, permission: "view:products" },
   { name: "Warehouse", path: "/warehouse", icon: Warehouse, permission: "view:products" },
   { name: "Purchasing", path: "/purchasing", icon: Truck, permission: "manage:purchases" },
+  { name: "HR Management", path: "/hr", icon: ClipboardList, permission: "manage:employees" },
   { name: "Employees", path: "/employees", icon: Users, permission: "manage:employees" },
   { name: "Branches", path: "/branches", icon: GitBranch, permission: "manage:branches" },
   { name: "Role Matrix", path: "/roles", icon: ShieldCheck, permission: "manage:settings" },

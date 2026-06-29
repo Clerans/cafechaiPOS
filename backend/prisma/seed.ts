@@ -650,6 +650,88 @@ async function main() {
         }
       });
     }
+
+    // 21. Seed HR Org & Schedules
+    console.log('Seeding HR logs...');
+    await prisma.department.deleteMany({});
+    await prisma.designation.deleteMany({});
+    await prisma.attendance.deleteMany({});
+    await prisma.leave.deleteMany({});
+    await prisma.payroll.deleteMany({});
+    await prisma.shift.deleteMany({});
+    await prisma.employeeShift.deleteMany({});
+
+    const deptRetail = await prisma.department.create({
+      data: {
+        name: 'POS Operations',
+        code: 'DEPT-POS'
+      }
+    });
+
+    const desigManager = await prisma.designation.create({
+      data: {
+        name: 'Branch Manager'
+      }
+    });
+
+    const firstEmp = await prisma.user.findFirst();
+    if (firstEmp) {
+      await prisma.user.update({
+        where: { id: firstEmp.id },
+        data: {
+          departmentId: deptRetail.id,
+          designationId: desigManager.id
+        }
+      });
+
+      await prisma.attendance.create({
+        data: {
+          userId: firstEmp.id,
+          clockIn: new Date(),
+          status: 'PRESENT'
+        }
+      });
+
+      await prisma.leave.create({
+        data: {
+          userId: firstEmp.id,
+          leaveType: 'CASUAL',
+          startDate: new Date(),
+          endDate: new Date(Date.now() + 24 * 60 * 60 * 1000),
+          status: 'PENDING',
+          reason: 'Attend family wedding'
+        }
+      });
+
+      const shiftMorning = await prisma.shift.create({
+        data: {
+          name: 'Morning Opening',
+          startTime: '08:00',
+          endTime: '16:00'
+        }
+      });
+
+      await prisma.employeeShift.create({
+        data: {
+          userId: firstEmp.id,
+          shiftId: shiftMorning.id,
+          date: new Date()
+        }
+      });
+
+      await prisma.payroll.create({
+        data: {
+          userId: firstEmp.id,
+          month: 'June',
+          year: 2026,
+          basicSalary: 3800.00,
+          allowances: 150.00,
+          deductions: 50.00,
+          netSalary: 3900.00,
+          status: 'PENDING'
+        }
+      });
+    }
   }
 
   console.log('Seeding completed successfully!');
