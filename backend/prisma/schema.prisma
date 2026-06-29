@@ -24,6 +24,9 @@ model User {
   transactions    Transaction[]
   cashDrawers     CashDrawerSession[]
   activityLogs    ActivityLog[]
+  poCreated       PurchaseOrder[]     @relation("POCreator")
+  poApproved      PurchaseOrder[]     @relation("POApprover")
+  grnsReceived    GoodsReceivedNote[]
   createdAt       DateTime            @default(now())
   updatedAt       DateTime            @updatedAt
 }
@@ -70,6 +73,7 @@ model Branch {
   expenses     Expense[]
   cashDrawers  CashDrawerSession[]
   products     Product[]
+  purchaseOrders PurchaseOrder[]
   createdAt    DateTime            @default(now())
   updatedAt    DateTime            @updatedAt
 }
@@ -130,17 +134,35 @@ model Product {
   cycleCountItems CycleCountItem[]
   items           TransactionItem[]
   heldOrderItems  HeldOrderItem[]
+  purchaseOrderItems  PurchaseOrderItem[]
+  grnItems            GoodsReceivedNoteItem[]
+  purchaseReturnItems PurchaseReturnItem[]
+  warehouseStocks     WarehouseStock[]
+  transferItems       StockTransferItem[]
+  productionOrders    ProductionOrder[]
+  damagedGoods        DamagedGoods[]
   createdAt       DateTime                   @default(now())
   updatedAt       DateTime                   @updatedAt
 }
 
 model Customer {
-  id           Int           @id @default(autoincrement())
-  name         String
-  phone        String?       @unique
-  email        String?
-  transactions Transaction[]
-  createdAt    DateTime      @default(now())
+  id                 Int                 @id @default(autoincrement())
+  name               String
+  phone              String?             @unique
+  email              String?
+  groupId            Int?
+  group              CustomerGroup?      @relation(fields: [groupId], references: [id], onDelete: SetNull)
+  membershipLevel    String              @default("BRONZE") // BRONZE, SILVER, GOLD, PLATINUM
+  loyaltyPoints      Int                 @default(0)
+  walletBalance      Float               @default(0.0)
+  creditLimit        Float               @default(0.0)
+  birthday           DateTime?
+  notes              String?
+  transactions       Transaction[]
+  walletTransactions WalletTransaction[]
+  campaignLogs       CampaignLog[]
+  createdAt          DateTime            @default(now())
+  updatedAt          DateTime            @default(now()) @updatedAt
 }
 
 model Transaction {
@@ -246,6 +268,12 @@ model ProductVariant {
   cycleCountItems  CycleCountItem[]
   transactionItems TransactionItem[]
   heldOrderItems   HeldOrderItem[]
+  purchaseOrderItems  PurchaseOrderItem[]
+  grnItems            GoodsReceivedNoteItem[]
+  purchaseReturnItems PurchaseReturnItem[]
+  warehouseStocks     WarehouseStock[]
+  transferItems       StockTransferItem[]
+  damagedGoods        DamagedGoods[]
   createdAt        DateTime                   @default(now())
   updatedAt        DateTime                   @updatedAt
 }
@@ -425,4 +453,237 @@ model ReturnLog {
   reason        String
   returnedItems Json        // Array of items returned
   createdAt     DateTime    @default(now())
+}
+
+model Supplier {
+  id          Int               @id @default(autoincrement())
+  name        String
+  code        String            @unique
+  contactName String?
+  email       String?
+  phone       String?
+  address     String?
+  orders      PurchaseOrder[]
+  payments    SupplierPayment[]
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+}
+
+model PurchaseOrder {
+  id            Int                 @id @default(autoincrement())
+  poNumber      String              @unique
+  supplierId    Int
+  supplier      Supplier            @relation(fields: [supplierId], references: [id], onDelete: Cascade)
+  branchId      Int
+  branch        Branch              @relation(fields: [branchId], references: [id], onDelete: Cascade)
+  status        String              @default("PENDING") // PENDING, APPROVED, REJECTED, RECEIVED
+  totalAmount   Float
+  notes         String?
+  createdBy     Int
+  creator       User                @relation("POCreator", fields: [createdBy], references: [id])
+  approvedBy    Int?
+  approver      User?               @relation("POApprover", fields: [approvedBy], references: [id])
+  attachments   String?             // JSON list of URLs or paths
+  items         PurchaseOrderItem[]
+  grns          GoodsReceivedNote[]
+  returns       PurchaseReturn[]
+  createdAt     DateTime            @default(now())
+  updatedAt     DateTime            @updatedAt
+}
+
+model PurchaseOrderItem {
+  id              Int             @id @default(autoincrement())
+  purchaseOrderId Int
+  purchaseOrder   PurchaseOrder   @relation(fields: [purchaseOrderId], references: [id], onDelete: Cascade)
+  productId       Int
+  product         Product         @relation(fields: [productId], references: [id], onDelete: Cascade)
+  variantId       Int?
+  variant         ProductVariant? @relation(fields: [variantId], references: [id], onDelete: SetNull)
+  quantity        Int
+  costPrice       Float
+}
+
+model GoodsReceivedNote {
+  id              Int                    @id @default(autoincrement())
+  grnNumber       String                 @unique
+  purchaseOrderId Int
+  purchaseOrder   PurchaseOrder          @relation(fields: [purchaseOrderId], references: [id], onDelete: Cascade)
+  receivedById    Int
+  receiver        User                   @relation(fields: [receivedById], references: [id])
+  receivedDate    DateTime               @default(now())
+  status          String                 @default("COMPLETED") // PARTIAL, COMPLETED
+  items           GoodsReceivedNoteItem[]
+  createdAt       DateTime               @default(now())
+  updatedAt       DateTime               @updatedAt
+}
+
+model GoodsReceivedNoteItem {
+  id        Int               @id @default(autoincrement())
+  grnId     Int
+  grn       GoodsReceivedNote @relation(fields: [grnId], references: [id], onDelete: Cascade)
+  productId Int
+  product   Product           @relation(fields: [productId], references: [id], onDelete: Cascade)
+  variantId Int?
+  variant   ProductVariant?   @relation(fields: [variantId], references: [id], onDelete: SetNull)
+  quantity  Int
+}
+
+model PurchaseReturn {
+  id              Int                  @id @default(autoincrement())
+  returnNumber    String               @unique
+  purchaseOrderId Int
+  purchaseOrder   PurchaseOrder        @relation(fields: [purchaseOrderId], references: [id], onDelete: Cascade)
+  totalRefund     Float
+  reason          String
+  items           PurchaseReturnItem[]
+  createdAt       DateTime             @default(now())
+  updatedAt       DateTime             @updatedAt
+}
+
+model PurchaseReturnItem {
+  id        Int             @id @default(autoincrement())
+  returnId  Int
+  return    PurchaseReturn  @relation(fields: [returnId], references: [id], onDelete: Cascade)
+  productId Int
+  product   Product         @relation(fields: [productId], references: [id], onDelete: Cascade)
+  variantId Int?
+  variant   ProductVariant? @relation(fields: [variantId], references: [id], onDelete: SetNull)
+  quantity  Int
+}
+
+model SupplierPayment {
+  id            Int      @id @default(autoincrement())
+  paymentNumber String   @unique
+  supplierId    Int
+  supplier      Supplier @relation(fields: [supplierId], references: [id], onDelete: Cascade)
+  amount        Float
+  paymentMethod String   // CASH, CARD, BANK_TRANSFER
+  referenceNo   String?
+  paymentDate   DateTime @default(now())
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}
+
+model CustomerGroup {
+  id              Int        @id @default(autoincrement())
+  name            String     @unique
+  discountPercent Float      @default(0.0)
+  customers       Customer[]
+  createdAt       DateTime   @default(now())
+  updatedAt       DateTime   @updatedAt
+}
+
+model WalletTransaction {
+  id         Int      @id @default(autoincrement())
+  customerId Int
+  customer   Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  type       String   // DEPOSIT, WITHDRAWAL, CREDIT_CHARGE, CREDIT_REFUND
+  amount     Float
+  reference  String?
+  createdAt  DateTime @default(now())
+}
+
+model Campaign {
+  id              Int           @id @default(autoincrement())
+  title           String
+  type            String        // SMS, EMAIL
+  message         String
+  discountPercent Float?
+  couponCode      String?
+  logs            CampaignLog[]
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+}
+
+model CampaignLog {
+  id         Int      @id @default(autoincrement())
+  campaignId Int
+  campaign   Campaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  customerId Int
+  customer   Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  status     String   // SENT, FAILED
+  sentAt     DateTime @default(now())
+}
+
+model Warehouse {
+  id               Int               @id @default(autoincrement())
+  name             String
+  code             String            @unique
+  address          String?
+  phone            String?
+  stocks           WarehouseStock[]
+  transfersFrom    StockTransfer[]   @relation("FromWarehouse")
+  transfersTo      StockTransfer[]   @relation("ToWarehouse")
+  productionOrders ProductionOrder[]
+  damagedGoods     DamagedGoods[]
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @default(now()) @updatedAt
+}
+
+model WarehouseStock {
+  id          Int             @id @default(autoincrement())
+  warehouseId Int
+  warehouse   Warehouse       @relation(fields: [warehouseId], references: [id], onDelete: Cascade)
+  productId   Int
+  product     Product         @relation(fields: [productId], references: [id], onDelete: Cascade)
+  variantId   Int?
+  variant     ProductVariant? @relation(fields: [variantId], references: [id], onDelete: SetNull)
+  quantity    Int             @default(0)
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @default(now()) @updatedAt
+}
+
+model StockTransfer {
+  id             Int                 @id @default(autoincrement())
+  transferNumber String              @unique
+  fromWarehouseId Int
+  fromWarehouse  Warehouse           @relation("FromWarehouse", fields: [fromWarehouseId], references: [id], onDelete: Cascade)
+  toWarehouseId   Int
+  toWarehouse    Warehouse           @relation("ToWarehouse", fields: [toWarehouseId], references: [id], onDelete: Cascade)
+  status         String              // PENDING, APPROVED, COMPLETED, CANCELLED
+  notes          String?
+  createdBy      Int
+  approvedBy     Int?
+  items          StockTransferItem[]
+  createdAt      DateTime            @default(now())
+  updatedAt      DateTime            @default(now()) @updatedAt
+}
+
+model StockTransferItem {
+  id         Int             @id @default(autoincrement())
+  transferId Int
+  transfer   StockTransfer   @relation(fields: [transferId], references: [id], onDelete: Cascade)
+  productId  Int
+  product    Product         @relation(fields: [productId], references: [id], onDelete: Cascade)
+  variantId  Int?
+  variant    ProductVariant? @relation(fields: [variantId], references: [id], onDelete: SetNull)
+  quantity   Int
+}
+
+model ProductionOrder {
+  id          Int       @id @default(autoincrement())
+  orderNumber String    @unique
+  productId   Int
+  product     Product   @relation(fields: [productId], references: [id], onDelete: Cascade)
+  quantity    Int
+  status      String    // PENDING, COMPLETED, CANCELLED
+  warehouseId Int
+  warehouse   Warehouse @relation(fields: [warehouseId], references: [id], onDelete: Cascade)
+  createdBy   Int
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @default(now()) @updatedAt
+}
+
+model DamagedGoods {
+  id          Int             @id @default(autoincrement())
+  warehouseId Int
+  warehouse   Warehouse       @relation(fields: [warehouseId], references: [id], onDelete: Cascade)
+  productId   Int
+  product     Product         @relation(fields: [productId], references: [id], onDelete: Cascade)
+  variantId   Int?
+  variant     ProductVariant? @relation(fields: [variantId], references: [id], onDelete: SetNull)
+  quantity    Int
+  reason      String?
+  loggedBy    Int
+  createdAt   DateTime        @default(now())
 }

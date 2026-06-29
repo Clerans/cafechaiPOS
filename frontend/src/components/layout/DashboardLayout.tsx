@@ -16,6 +16,8 @@ import {
   ChevronRight,
   ShoppingBag,
   Package,
+  Truck,
+  Warehouse,
 } from "lucide-react";
 import { useAuthStore } from "@/store/authStore";
 import { useThemeStore } from "@/store/themeStore";
@@ -31,7 +33,10 @@ interface SidebarItem {
 const SIDEBAR_ITEMS: SidebarItem[] = [
   { name: "Dashboard", path: "/", icon: LayoutDashboard },
   { name: "POS Checkout", path: "/pos", icon: ShoppingBag, permission: "manage:sales" },
+  { name: "CRM Relationships", path: "/crm", icon: Users, permission: "manage:sales" },
   { name: "Inventory", path: "/inventory", icon: Package, permission: "view:products" },
+  { name: "Warehouse", path: "/warehouse", icon: Warehouse, permission: "view:products" },
+  { name: "Purchasing", path: "/purchasing", icon: Truck, permission: "manage:purchases" },
   { name: "Employees", path: "/employees", icon: Users, permission: "manage:employees" },
   { name: "Branches", path: "/branches", icon: GitBranch, permission: "manage:branches" },
   { name: "Role Matrix", path: "/roles", icon: ShieldCheck, permission: "manage:settings" },

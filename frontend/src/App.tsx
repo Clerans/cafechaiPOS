@@ -14,6 +14,9 @@ import { CompanySettingsPage } from "@/pages/Settings/CompanySettingsPage";
 import { RolesPermissionsPage } from "@/pages/Roles/RolesPermissionsPage";
 import { InventoryHub } from "@/pages/Inventory/InventoryHub";
 import { POSScreen } from "@/pages/POS/POSScreen";
+import { PurchasingHub } from "@/pages/Purchasing/PurchasingHub";
+import { CRMHub } from "@/pages/CRM/CRMHub";
+import { WarehouseHub } from "@/pages/Warehouse/WarehouseHub";
 import { ShieldAlert } from "lucide-react";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/Card";
 
@@ -141,6 +144,45 @@ export function App() {
             <DashboardLayout>
               <PermissionRoute permission="manage:sales">
                 <POSScreen />
+              </PermissionRoute>
+            </DashboardLayout>
+          </PrivateRoute>
+        }
+      />
+
+      <Route
+        path="/purchasing"
+        element={
+          <PrivateRoute>
+            <DashboardLayout>
+              <PermissionRoute permission="manage:purchases">
+                <PurchasingHub />
+              </PermissionRoute>
+            </DashboardLayout>
+          </PrivateRoute>
+        }
+      />
+
+      <Route
+        path="/crm"
+        element={
+          <PrivateRoute>
+            <DashboardLayout>
+              <PermissionRoute permission="manage:sales">
+                <CRMHub />
+              </PermissionRoute>
+            </DashboardLayout>
+          </PrivateRoute>
+        }
+      />
+
+      <Route
+        path="/warehouse"
+        element={
+          <PrivateRoute>
+            <DashboardLayout>
+              <PermissionRoute permission="view:products">
+                <WarehouseHub />
               </PermissionRoute>
             </DashboardLayout>
           </PrivateRoute>
