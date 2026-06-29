@@ -16,6 +16,7 @@ import {
   ChevronRight,
   ShoppingBag,
   Package,
+  Truck,
 } from "lucide-react";
 import { useAuthStore } from "@/store/authStore";
 import { useThemeStore } from "@/store/themeStore";
@@ -32,6 +33,7 @@ const SIDEBAR_ITEMS: SidebarItem[] = [
   { name: "Dashboard", path: "/", icon: LayoutDashboard },
   { name: "POS Checkout", path: "/pos", icon: ShoppingBag, permission: "manage:sales" },
   { name: "Inventory", path: "/inventory", icon: Package, permission: "view:products" },
+  { name: "Purchasing", path: "/purchasing", icon: Truck, permission: "manage:purchases" },
   { name: "Employees", path: "/employees", icon: Users, permission: "manage:employees" },
   { name: "Branches", path: "/branches", icon: GitBranch, permission: "manage:branches" },
   { name: "Role Matrix", path: "/roles", icon: ShieldCheck, permission: "manage:settings" },

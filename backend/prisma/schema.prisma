@@ -24,6 +24,9 @@ model User {
   transactions    Transaction[]
   cashDrawers     CashDrawerSession[]
   activityLogs    ActivityLog[]
+  poCreated       PurchaseOrder[]     @relation("POCreator")
+  poApproved      PurchaseOrder[]     @relation("POApprover")
+  grnsReceived    GoodsReceivedNote[]
   createdAt       DateTime            @default(now())
   updatedAt       DateTime            @updatedAt
 }
@@ -70,6 +73,7 @@ model Branch {
   expenses     Expense[]
   cashDrawers  CashDrawerSession[]
   products     Product[]
+  purchaseOrders PurchaseOrder[]
   createdAt    DateTime            @default(now())
   updatedAt    DateTime            @updatedAt
 }
@@ -130,6 +134,9 @@ model Product {
   cycleCountItems CycleCountItem[]
   items           TransactionItem[]
   heldOrderItems  HeldOrderItem[]
+  purchaseOrderItems  PurchaseOrderItem[]
+  grnItems            GoodsReceivedNoteItem[]
+  purchaseReturnItems PurchaseReturnItem[]
   createdAt       DateTime                   @default(now())
   updatedAt       DateTime                   @updatedAt
 }
@@ -246,6 +253,9 @@ model ProductVariant {
   cycleCountItems  CycleCountItem[]
   transactionItems TransactionItem[]
   heldOrderItems   HeldOrderItem[]
+  purchaseOrderItems  PurchaseOrderItem[]
+  grnItems            GoodsReceivedNoteItem[]
+  purchaseReturnItems PurchaseReturnItem[]
   createdAt        DateTime                   @default(now())
   updatedAt        DateTime                   @updatedAt
 }
@@ -425,4 +435,113 @@ model ReturnLog {
   reason        String
   returnedItems Json        // Array of items returned
   createdAt     DateTime    @default(now())
+}
+
+model Supplier {
+  id          Int               @id @default(autoincrement())
+  name        String
+  code        String            @unique
+  contactName String?
+  email       String?
+  phone       String?
+  address     String?
+  orders      PurchaseOrder[]
+  payments    SupplierPayment[]
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+}
+
+model PurchaseOrder {
+  id            Int                 @id @default(autoincrement())
+  poNumber      String              @unique
+  supplierId    Int
+  supplier      Supplier            @relation(fields: [supplierId], references: [id], onDelete: Cascade)
+  branchId      Int
+  branch        Branch              @relation(fields: [branchId], references: [id], onDelete: Cascade)
+  status        String              @default("PENDING") // PENDING, APPROVED, REJECTED, RECEIVED
+  totalAmount   Float
+  notes         String?
+  createdBy     Int
+  creator       User                @relation("POCreator", fields: [createdBy], references: [id])
+  approvedBy    Int?
+  approver      User?               @relation("POApprover", fields: [approvedBy], references: [id])
+  attachments   String?             // JSON list of URLs or paths
+  items         PurchaseOrderItem[]
+  grns          GoodsReceivedNote[]
+  returns       PurchaseReturn[]
+  createdAt     DateTime            @default(now())
+  updatedAt     DateTime            @updatedAt
+}
+
+model PurchaseOrderItem {
+  id              Int             @id @default(autoincrement())
+  purchaseOrderId Int
+  purchaseOrder   PurchaseOrder   @relation(fields: [purchaseOrderId], references: [id], onDelete: Cascade)
+  productId       Int
+  product         Product         @relation(fields: [productId], references: [id], onDelete: Cascade)
+  variantId       Int?
+  variant         ProductVariant? @relation(fields: [variantId], references: [id], onDelete: SetNull)
+  quantity        Int
+  costPrice       Float
+}
+
+model GoodsReceivedNote {
+  id              Int                    @id @default(autoincrement())
+  grnNumber       String                 @unique
+  purchaseOrderId Int
+  purchaseOrder   PurchaseOrder          @relation(fields: [purchaseOrderId], references: [id], onDelete: Cascade)
+  receivedById    Int
+  receiver        User                   @relation(fields: [receivedById], references: [id])
+  receivedDate    DateTime               @default(now())
+  status          String                 @default("COMPLETED") // PARTIAL, COMPLETED
+  items           GoodsReceivedNoteItem[]
+  createdAt       DateTime               @default(now())
+  updatedAt       DateTime               @updatedAt
+}
+
+model GoodsReceivedNoteItem {
+  id        Int               @id @default(autoincrement())
+  grnId     Int
+  grn       GoodsReceivedNote @relation(fields: [grnId], references: [id], onDelete: Cascade)
+  productId Int
+  product   Product           @relation(fields: [productId], references: [id], onDelete: Cascade)
+  variantId Int?
+  variant   ProductVariant?   @relation(fields: [variantId], references: [id], onDelete: SetNull)
+  quantity  Int
+}
+
+model PurchaseReturn {
+  id              Int                  @id @default(autoincrement())
+  returnNumber    String               @unique
+  purchaseOrderId Int
+  purchaseOrder   PurchaseOrder        @relation(fields: [purchaseOrderId], references: [id], onDelete: Cascade)
+  totalRefund     Float
+  reason          String
+  items           PurchaseReturnItem[]
+  createdAt       DateTime             @default(now())
+  updatedAt       DateTime             @updatedAt
+}
+
+model PurchaseReturnItem {
+  id        Int             @id @default(autoincrement())
+  returnId  Int
+  return    PurchaseReturn  @relation(fields: [returnId], references: [id], onDelete: Cascade)
+  productId Int
+  product   Product         @relation(fields: [productId], references: [id], onDelete: Cascade)
+  variantId Int?
+  variant   ProductVariant? @relation(fields: [variantId], references: [id], onDelete: SetNull)
+  quantity  Int
+}
+
+model SupplierPayment {
+  id            Int      @id @default(autoincrement())
+  paymentNumber String   @unique
+  supplierId    Int
+  supplier      Supplier @relation(fields: [supplierId], references: [id], onDelete: Cascade)
+  amount        Float
+  paymentMethod String   // CASH, CARD, BANK_TRANSFER
+  referenceNo   String?
+  paymentDate   DateTime @default(now())
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
 }

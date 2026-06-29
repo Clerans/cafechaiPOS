@@ -14,6 +14,7 @@ import { CompanySettingsPage } from "@/pages/Settings/CompanySettingsPage";
 import { RolesPermissionsPage } from "@/pages/Roles/RolesPermissionsPage";
 import { InventoryHub } from "@/pages/Inventory/InventoryHub";
 import { POSScreen } from "@/pages/POS/POSScreen";
+import { PurchasingHub } from "@/pages/Purchasing/PurchasingHub";
 import { ShieldAlert } from "lucide-react";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/Card";
 
@@ -141,6 +142,19 @@ export function App() {
             <DashboardLayout>
               <PermissionRoute permission="manage:sales">
                 <POSScreen />
+              </PermissionRoute>
+            </DashboardLayout>
+          </PrivateRoute>
+        }
+      />
+
+      <Route
+        path="/purchasing"
+        element={
+          <PrivateRoute>
+            <DashboardLayout>
+              <PermissionRoute permission="manage:purchases">
+                <PurchasingHub />
               </PermissionRoute>
             </DashboardLayout>
           </PrivateRoute>
