@@ -10,6 +10,8 @@ import dashboardRoutes from './routes/dashboard.routes';
 import inventoryRoutes from './routes/inventory.routes';
 import posRoutes from './routes/pos.routes';
 import purchasingRoutes from './routes/purchasing.routes';
+import crmRoutes from './routes/crm.routes';
+import warehouseRoutes from './routes/warehouse.routes';
 
 dotenv.config();
 
@@ -40,6 +42,8 @@ app.use('/api/dashboard', dashboardRoutes);
 app.use('/api/inventory', inventoryRoutes);
 app.use('/api/pos', posRoutes);
 app.use('/api/purchasing', purchasingRoutes);
+app.use('/api/crm', crmRoutes);
+app.use('/api/warehouse', warehouseRoutes);
 
 // Global Error Handler
 app.use((err: any, req: Request, res: Response, next: NextFunction) => {
