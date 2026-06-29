@@ -773,3 +773,27 @@ model Payroll {
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @default(now()) @updatedAt
 }
+
+model BankAccount {
+  id            Int                    @id @default(autoincrement())
+  bankName      String
+  accountNumber String                 @unique
+  accountHolder String
+  balance       Float                  @default(0.0)
+  transactions  FinancialTransaction[]
+  createdAt     DateTime               @default(now())
+  updatedAt     DateTime               @default(now()) @updatedAt
+}
+
+model FinancialTransaction {
+  id            Int          @id @default(autoincrement())
+  type          String       // INCOME, EXPENSE, BANK_TRANSFER, DRAWER_ADJUSTMENT
+  amount        Float
+  description   String
+  reference     String?
+  bankAccountId Int?
+  bankAccount   BankAccount? @relation(fields: [bankAccountId], references: [id], onDelete: SetNull)
+  date          DateTime     @default(now())
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @default(now()) @updatedAt
+}

@@ -18,6 +18,7 @@ import { PurchasingHub } from "@/pages/Purchasing/PurchasingHub";
 import { CRMHub } from "@/pages/CRM/CRMHub";
 import { WarehouseHub } from "@/pages/Warehouse/WarehouseHub";
 import { HRHub } from "@/pages/HR/HRHub";
+import { FinanceHub } from "@/pages/Finance/FinanceHub";
 import { ShieldAlert } from "lucide-react";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/Card";
 
@@ -197,6 +198,19 @@ export function App() {
             <DashboardLayout>
               <PermissionRoute permission="manage:employees">
                 <HRHub />
+              </PermissionRoute>
+            </DashboardLayout>
+          </PrivateRoute>
+        }
+      />
+
+      <Route
+        path="/finance"
+        element={
+          <PrivateRoute>
+            <DashboardLayout>
+              <PermissionRoute permission="manage:settings">
+                <FinanceHub />
               </PermissionRoute>
             </DashboardLayout>
           </PrivateRoute>

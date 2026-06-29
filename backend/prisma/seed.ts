@@ -732,6 +732,49 @@ async function main() {
         }
       });
     }
+
+    // 22. Seed Bank Accounts & Transactions
+    console.log('Seeding bank accounts & ledger...');
+    await prisma.bankAccount.deleteMany({});
+    await prisma.financialTransaction.deleteMany({});
+
+    const operatingAcc = await prisma.bankAccount.create({
+      data: {
+        bankName: 'Chase Operating Account',
+        accountNumber: '10229891827',
+        accountHolder: 'Cafe Chai LLC',
+        balance: 14500.00
+      }
+    });
+
+    const taxAcc = await prisma.bankAccount.create({
+      data: {
+        bankName: 'BoA Tax Savings Account',
+        accountNumber: '99028127364',
+        accountHolder: 'Cafe Chai LLC',
+        balance: 2300.00
+      }
+    });
+
+    await prisma.financialTransaction.create({
+      data: {
+        type: 'INCOME',
+        amount: 450.00,
+        description: 'Catering event advance',
+        reference: 'TXN-CATER-01',
+        bankAccountId: operatingAcc.id
+      }
+    });
+
+    await prisma.financialTransaction.create({
+      data: {
+        type: 'EXPENSE',
+        amount: 120.00,
+        description: 'Office stationery and printer ink refill',
+        reference: 'TXN-SUPPLIES-02',
+        bankAccountId: operatingAcc.id
+      }
+    });
   }
 
   console.log('Seeding completed successfully!');

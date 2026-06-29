@@ -109,10 +109,10 @@ export function Login() {
               Sign In
             </Button>
           </form>
-          
+
           <div className="mt-6 text-center text-xs text-muted-foreground border-t pt-4">
             <p>Seeded Admin Credentials:</p>
-            <p className="font-semibold text-foreground mt-1">admin@enterprise.com / Password123</p>
+            <p className="font-semibold text-foreground mt-1">admin@enterprise.com / enter your password</p>
           </div>
         </CardContent>
       </Card>
