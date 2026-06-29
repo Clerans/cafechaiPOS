@@ -526,7 +526,7 @@ async function main() {
         items: {
           create: [
             {
-              productId: espressoBeans.id,
+              productId: vanillaLatte.id,
               quantity: 20,
               costPrice: 5.50
             }
@@ -534,6 +534,122 @@ async function main() {
         }
       }
     });
+
+    // 19. Seed Customer Groups and Campaigns
+    console.log('Seeding customer groups and campaigns...');
+    await prisma.customerGroup.deleteMany({});
+    await prisma.campaign.deleteMany({});
+
+    const vipGroup = await prisma.customerGroup.create({
+      data: {
+        name: 'VIP Club Members',
+        discountPercent: 15.00
+      }
+    });
+
+    await prisma.customerGroup.create({
+      data: {
+        name: 'Local Neighborhood tier',
+        discountPercent: 5.00
+      }
+    });
+
+    const firstCustomer = await prisma.customer.findFirst();
+    if (firstCustomer) {
+      await prisma.customer.update({
+        where: { id: firstCustomer.id },
+        data: {
+          groupId: vipGroup.id,
+          membershipLevel: 'GOLD',
+          loyaltyPoints: 350,
+          walletBalance: 25.00,
+          creditLimit: 150.00
+        }
+      });
+    }
+
+    const campaign = await prisma.campaign.create({
+      data: {
+        title: 'July VIP Summer Sale',
+        type: 'EMAIL',
+        message: 'Hello VIP! Enjoy an exclusive 15% off using coupon VIPSUMMER15 this weekend.',
+        discountPercent: 15.0,
+        couponCode: 'VIPSUMMER15'
+      }
+    });
+
+    const customersList = await prisma.customer.findMany({ select: { id: true } });
+    if (customersList.length > 0) {
+      await prisma.campaignLog.createMany({
+        data: customersList.map((c) => ({
+          campaignId: campaign.id,
+          customerId: c.id,
+          status: 'SENT'
+        }))
+      });
+    }
+
+    // 20. Seed Warehouses and Stocks
+    console.log('Seeding warehouses and stock logs...');
+    await prisma.warehouse.deleteMany({});
+    await prisma.warehouseStock.deleteMany({});
+    await prisma.stockTransfer.deleteMany({});
+    await prisma.productionOrder.deleteMany({});
+    await prisma.damagedGoods.deleteMany({});
+
+    const whCentral = await prisma.warehouse.create({
+      data: {
+        name: 'Central Hub Warehouse',
+        code: 'WH-CENTRAL-01',
+        address: '400 Logistics Way, Seattle WA',
+        phone: '+1 (555) 120-9988'
+      }
+    });
+
+    const whNorth = await prisma.warehouse.create({
+      data: {
+        name: 'Northside Satellite Storage',
+        code: 'WH-NORTH-02',
+        address: '98 Enterprise Dr, Lynnwood WA',
+        phone: '+1 (555) 304-7744'
+      }
+    });
+
+    if (vanillaLatte) {
+      await prisma.warehouseStock.create({
+        data: {
+          warehouseId: whCentral.id,
+          productId: vanillaLatte.id,
+          quantity: 150
+        }
+      });
+      await prisma.warehouseStock.create({
+        data: {
+          warehouseId: whNorth.id,
+          productId: vanillaLatte.id,
+          quantity: 25
+        }
+      });
+
+      await prisma.stockTransfer.create({
+        data: {
+          transferNumber: 'TRF-SEED-01',
+          fromWarehouseId: whCentral.id,
+          toWarehouseId: whNorth.id,
+          status: 'PENDING',
+          notes: 'Replenishing North side stock',
+          createdBy: 1,
+          items: {
+            create: [
+              {
+                productId: vanillaLatte.id,
+                quantity: 10
+              }
+            ]
+          }
+        }
+      });
+    }
   }
 
   console.log('Seeding completed successfully!');
