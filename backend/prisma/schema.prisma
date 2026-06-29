@@ -27,6 +27,14 @@ model User {
   poCreated       PurchaseOrder[]     @relation("POCreator")
   poApproved      PurchaseOrder[]     @relation("POApprover")
   grnsReceived    GoodsReceivedNote[]
+  departmentId    Int?
+  department      Department?         @relation(fields: [departmentId], references: [id], onDelete: SetNull)
+  designationId   Int?
+  designation     Designation?        @relation(fields: [designationId], references: [id], onDelete: SetNull)
+  attendances     Attendance[]
+  leaves          Leave[]
+  employeeShifts  EmployeeShift[]
+  payrolls        Payroll[]
   createdAt       DateTime            @default(now())
   updatedAt       DateTime            @updatedAt
 }
@@ -686,4 +694,106 @@ model DamagedGoods {
   reason      String?
   loggedBy    Int
   createdAt   DateTime        @default(now())
+}
+
+model Department {
+  id        Int      @id @default(autoincrement())
+  name      String   @unique
+  code      String   @unique
+  employees User[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now()) @updatedAt
+}
+
+model Designation {
+  id        Int      @id @default(autoincrement())
+  name      String   @unique
+  employees User[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now()) @updatedAt
+}
+
+model Attendance {
+  id        Int       @id @default(autoincrement())
+  userId    Int
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  clockIn   DateTime  @default(now())
+  clockOut  DateTime?
+  status    String    // PRESENT, LATE, ABSENT
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @default(now()) @updatedAt
+}
+
+model Shift {
+  id             Int             @id @default(autoincrement())
+  name           String          @unique // e.g. "Morning", "Evening"
+  startTime      String          // e.g. "08:00"
+  endTime        String          // e.g. "16:00"
+  employeeShifts EmployeeShift[]
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @default(now()) @updatedAt
+}
+
+model EmployeeShift {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  shiftId   Int
+  shift     Shift    @relation(fields: [shiftId], references: [id], onDelete: Cascade)
+  date      DateTime
+  createdAt DateTime @default(now())
+}
+
+model Leave {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  leaveType String   // CASUAL, SICK, ANNUAL
+  startDate DateTime
+  endDate   DateTime
+  status    String   // PENDING, APPROVED, REJECTED
+  reason    String?
+  approvedBy Int?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now()) @updatedAt
+}
+
+model Payroll {
+  id          Int       @id @default(autoincrement())
+  userId      Int
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  month       String    // e.g. "June"
+  year        Int       // e.g. 2026
+  basicSalary Float
+  allowances  Float     @default(0.0)
+  deductions  Float     @default(0.0)
+  netSalary   Float
+  status      String    // PENDING, PAID
+  paidAt      DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @default(now()) @updatedAt
+}
+
+model BankAccount {
+  id            Int                    @id @default(autoincrement())
+  bankName      String
+  accountNumber String                 @unique
+  accountHolder String
+  balance       Float                  @default(0.0)
+  transactions  FinancialTransaction[]
+  createdAt     DateTime               @default(now())
+  updatedAt     DateTime               @default(now()) @updatedAt
+}
+
+model FinancialTransaction {
+  id            Int          @id @default(autoincrement())
+  type          String       // INCOME, EXPENSE, BANK_TRANSFER, DRAWER_ADJUSTMENT
+  amount        Float
+  description   String
+  reference     String?
+  bankAccountId Int?
+  bankAccount   BankAccount? @relation(fields: [bankAccountId], references: [id], onDelete: SetNull)
+  date          DateTime     @default(now())
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @default(now()) @updatedAt
 }
