@@ -486,6 +486,54 @@ async function main() {
         expiryDate: new Date('2030-12-31')
       }
     });
+
+    // 18. Seed Suppliers and Purchase Orders
+    console.log('Seeding suppliers and POs...');
+    await prisma.supplier.deleteMany({});
+    await prisma.purchaseOrder.deleteMany({});
+    
+    const supplier1 = await prisma.supplier.create({
+      data: {
+        name: 'Whole Latte Beans Co',
+        code: 'SUP-WLBEANS',
+        contactName: 'Sarah Jenkins',
+        email: 'orders@wlbeans.com',
+        phone: '+1 (555) 304-9823',
+        address: '108 Roastery Lane, Seattle WA',
+      }
+    });
+
+    const supplier2 = await prisma.supplier.create({
+      data: {
+        name: 'Daily Dairy Farms',
+        code: 'SUP-DAIRY',
+        contactName: 'James Miller',
+        email: 'billing@dailydairy.com',
+        phone: '+1 (555) 781-4320',
+        address: '42 Pasture Rd, Madison WI',
+      }
+    });
+
+    await prisma.purchaseOrder.create({
+      data: {
+        poNumber: 'PO-SEED-01',
+        supplierId: supplier1.id,
+        branchId: 1,
+        status: 'PENDING',
+        totalAmount: 110.00,
+        notes: 'Monthly espresso beans shipment request',
+        createdBy: 1,
+        items: {
+          create: [
+            {
+              productId: espressoBeans.id,
+              quantity: 20,
+              costPrice: 5.50
+            }
+          ]
+        }
+      }
+    });
   }
 
   console.log('Seeding completed successfully!');
