@@ -97,7 +97,7 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
             </div>
             {isSidebarOpen && (
               <span className="font-extrabold text-lg tracking-tight bg-gradient-to-r from-primary to-violet-600 bg-clip-text text-transparent truncate">
-                Apex POS
+                CAFECHAI
               </span>
             )}
           </div>
@@ -153,7 +153,7 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
                   <ShoppingBag className="h-5 w-5" />
                 </div>
                 <span className="font-extrabold text-lg tracking-tight bg-gradient-to-r from-primary to-violet-600 bg-clip-text text-transparent">
-                  Apex POS
+                  CAFECHAI
                 </span>
               </div>
               <Button variant="ghost" size="icon" onClick={() => setIsMobileMenuOpen(false)}>

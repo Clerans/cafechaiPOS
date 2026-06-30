@@ -694,7 +694,7 @@ export function FinanceHub() {
             <Input
               value={accountForm.accountHolder}
               onChange={(e) => setAccountForm({ ...accountForm, accountHolder: e.target.value })}
-              placeholder="e.g. Cafe Chai LLC"
+              placeholder="e.g. CAFECHAI LLC"
               required
             />
           </div>
