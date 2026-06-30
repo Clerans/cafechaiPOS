@@ -1,6 +1,6 @@
 import { useAuthStore } from "@/store/authStore";
 
-const BASE_URL = ""; // Relative path, proxy handles target redirection
+const BASE_URL = import.meta.env.VITE_API_URL; // Relative path, proxy handles target redirection
 
 interface RequestOptions extends RequestInit {
   body?: any;
