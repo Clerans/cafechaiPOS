@@ -71,7 +71,7 @@ export function ReceiptPrintModal({
           </head>
           <body>
             <div class="center">
-              <h2 style="margin: 0 0 5px 0;">Cafe Chai POS</h2>
+              <h2 style="margin: 0 0 5px 0;">CAFECHAI POS</h2>
               <p style="margin: 0 0 5px 0; font-size: 10px;">123 Enterprise Blvd, Suite 100</p>
               <p style="margin: 0 0 5px 0; font-size: 10px;">Tel: +1 (555) 019-2834</p>
             </div>
@@ -117,7 +117,7 @@ export function ReceiptPrintModal({
             <div class="dashed"></div>
             <div class="center" style="font-size: 10px; margin-top: 15px;">
               <p>Thank you for shopping with us!</p>
-              <p>Powered by Apex POS ERP</p>
+              <p>Powered by CAFECHAI ERP</p>
             </div>
             <script>
               window.onload = function() {
@@ -217,7 +217,7 @@ export function ReceiptPrintModal({
         {/* Paper visual wrap */}
         <div className="bg-white text-black p-6 border rounded-xl font-mono text-xs max-h-[300px] overflow-y-auto shadow-inner mb-6">
           <div className="text-center mb-4">
-            <h3 className="text-sm font-bold">Cafe Chai POS</h3>
+            <h3 className="text-sm font-bold">CAFECHAI POS</h3>
             <p className="text-[10px] text-gray-500">123 Enterprise Blvd, Suite 100</p>
           </div>
           <div className="border-t border-dashed border-gray-400 my-2" />

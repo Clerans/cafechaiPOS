@@ -62,7 +62,7 @@ export function Login() {
           <div className="mx-auto h-12 w-12 bg-primary flex items-center justify-center rounded-xl text-primary-foreground shadow-lg shadow-primary/20 mb-3">
             <ShoppingBag className="h-6 w-6" />
           </div>
-          <CardTitle className="text-2xl font-bold tracking-tight">Apex Enterprise POS</CardTitle>
+          <CardTitle className="text-2xl font-bold tracking-tight">CAFECHAI Enterprise POS</CardTitle>
           <CardDescription>Enter your credentials to sign in to your dashboard</CardDescription>
         </CardHeader>
         <CardContent>
